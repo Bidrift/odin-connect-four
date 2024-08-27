@@ -10,20 +10,17 @@ describe ConnectFour do # rubocop:disable Metrics/BlockLength
   describe "#createboard" do
     subject(:board_game) { described_class.new }
     it "sets @board to an instance of Board" do
-      expect { board_game.create_board }.to change { board_game.instance_variable_get(:@board).class }.to be(Board)
+      expect(board_game.create_board.class).to be(Board)
     end
   end
 
   describe "#create_players" do
     subject(:player_game) { described_class.new }
     it "sets an array of length 2" do
-      expect { player_game.create_players }.to change { player_game.instance_variable_get(:@players).length }.to be(2)
+      expect(player_game.create_players.length).to be(2)
     end
     it "sets an array with Player instances" do
-      expect { player_game.create_players }.to change {
-                                                 player_game.instance_variable_get(:@players)
-                                                            .map(&:class)
-                                               }.to all(be(Player))
+      expect(player_game.create_players.map(&:class).map(&:superclass)).to all(eq(Player))
     end
   end
 
@@ -71,7 +68,7 @@ describe ConnectFour do # rubocop:disable Metrics/BlockLength
       subject(:game_run) { described_class.new(board) }
 
       before do
-        allow(game_run).to receive(:over?).and_return(false)
+        allow(game_run).to receive(:over?).and_return(true)
         allow(game_run).to receive(:show_winner)
       end
 
@@ -86,7 +83,7 @@ describe ConnectFour do # rubocop:disable Metrics/BlockLength
       subject(:game_run) { described_class.new(board) }
 
       before do
-        allow(game_run).to receive(:over?).and_return(true, false)
+        allow(game_run).to receive(:over?).and_return(false, true)
         allow(game_run).to receive(:show_winner)
       end
 
@@ -101,7 +98,7 @@ describe ConnectFour do # rubocop:disable Metrics/BlockLength
       subject(:game_run) { described_class.new(board) }
 
       before do
-        allow(game_run).to receive(:over?).and_return(true, true, true, false)
+        allow(game_run).to receive(:over?).and_return(false, false, false, true)
         allow(game_run).to receive(:show_winner)
       end
 
@@ -119,8 +116,10 @@ describe ConnectFour do # rubocop:disable Metrics/BlockLength
       subject(:game_play) { described_class.new(board, player) }
 
       before do
+        allow(game_play).to receive(:puts)
         allow(board).to receive(:display_board)
         allow(game_play).to receive(:get_player_move).with(player)
+        allow(player).to receive(:item)
         allow(board).to receive(:save_move)
       end
 
@@ -133,7 +132,9 @@ describe ConnectFour do # rubocop:disable Metrics/BlockLength
       subject(:game_play) { described_class.new(board, player, 1) }
 
       before do
+        allow(game_play).to receive(:puts)
         allow(board).to receive(:display_board)
+        allow(player).to receive(:item)
         allow(game_play).to receive(:get_player_move).with(player)
         allow(board).to receive(:save_move)
       end
@@ -151,12 +152,14 @@ describe ConnectFour do # rubocop:disable Metrics/BlockLength
     context "when the player has correct input" do
       before do
         valid_input = 1
-        allow(player).to receive(:get_move).and_return(valid_input)
+        allow(game_play).to receive(:puts)
+        allow(player).to receive(:input).and_return(valid_input)
         allow(board).to receive(:valid_move?).and_return(true)
       end
 
       it "asks for input once" do
-        expect(player).to receive(:get_move).once
+        expect(player).to receive(:input).once
+        game_play.get_player_move(player)
       end
 
       it "returns the move the player has chosen (1)" do
@@ -168,12 +171,14 @@ describe ConnectFour do # rubocop:disable Metrics/BlockLength
       before do
         wrong = 1
         valid_input = 2
-        allow(player).to receive(:get_move).and_return(wrong, valid_input)
+        allow(game_play).to receive(:puts)
+        allow(player).to receive(:input).and_return(wrong, valid_input)
         allow(board).to receive(:valid_move?).and_return(false, true)
       end
 
       it "asks for input twice" do
-        expect(player).to receive(:get_move).twice
+        expect(player).to receive(:input).twice
+        game_play.get_player_move(player)
       end
 
       it "returns only the valid move (2)" do
