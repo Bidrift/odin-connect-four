@@ -2,11 +2,6 @@ require "./lib/items/board"
 require "./lib/items/item"
 
 RSpec.shared_examples "diagonal checks" do
-  before do
-    allow(subject).to receive(:check_rows).and_return(false)
-    allow(subject).to receive(:check_cols).and_return(false)
-    allow(subject).to receive(:check_diag).and_return(true)
-  end
   it "checks rows" do
     expect(subject).to receive(:check_rows).and_return(false)
     subject.winner_exists?
@@ -29,11 +24,6 @@ describe Board do
     context "when there is no winning combination" do
       let(:item) { instance_double(Item) }
       subject(:no_win) { described_class.new }
-      before do
-        allow(no_win).to receive(:check_rows).and_return(false)
-        allow(no_win).to receive(:check_cols).and_return(false)
-        allow(no_win).to receive(:check_diag).and_return(false)
-      end
       it "checks rows" do
         expect(no_win).to receive(:check_rows).and_return(false)
         no_win.winner_exists?
@@ -53,11 +43,8 @@ describe Board do
     context "when there is a row winning combination" do
       let(:item) { instance_double(Item) }
       subject(:row_win) { described_class.new([Array.new(4, item)]) }
-      before do
-        allow(row_win).to receive(:check_rows).and_return(true)
-      end
       it "checks rows" do
-        expect(row_win).to receive(:check_rows).and_return(true)
+        expect(row_win).to receive(:check_rows).once.and_return(true)
         row_win.winner_exists?
       end
       it "does not check columns" do
@@ -75,10 +62,6 @@ describe Board do
     context "when there is a column winning combination" do
       let(:item) { instance_double(Item) }
       subject(:col_win) { described_class.new([[item], [item], [item], [item]]) }
-      before do
-        allow(col_win).to receive(:check_rows).and_return(false)
-        allow(col_win).to receive(:check_cols).and_return(true)
-      end
       it "checks rows" do
         expect(col_win).to receive(:check_rows).and_return(false)
         col_win.winner_exists?
@@ -121,7 +104,8 @@ describe Board do
       end
     end
     context "when the board is full" do
-      subject(:full_board) { described_class.new }
+      let(:item) { instance_double(Item) }
+      subject(:full_board) { described_class.new(Array.new(6) { Array.new(7) { item } }) }
       it "returns true" do
         expect(full_board).to be_full
       end
@@ -129,10 +113,10 @@ describe Board do
   end
 
   describe "#save_move" do
-    let(:item) { instance_double(Item) }
+    let(:item) { Item.new }
     subject(:board) { described_class.new([[nil], [nil], [nil], [nil]]) }
     it "changes the last nil to an Item instance" do
-      expect { board.save_move(0, item) }.to(change { board.instance_variable_get(:@board)[3][0] })
+      expect { board.save_move(0, item) }.to change { board.instance_variable_get(:@board)[3][0].class }.to be(Item)
     end
   end
 
